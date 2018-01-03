@@ -1,0 +1,15 @@
+{
+  "name": "ps-warnings-removal-tool",
+  "version": "0.0.1",
+  "description": "A automated CLI tool that automatically fixes most warnings",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "author": "",
+  "license": "MIT"
+}
