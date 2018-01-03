@@ -4,6 +4,8 @@ const net = require('net');
 const { log } = require('./progressLogger');
 const { execIDE, startIDE, stopIDE } = require('./pursIde');
 
+const { CodeEditor } = require('./codeEditor');
+
 if (process.argv.length > 2)
 	process.chdir(process.argv[2]);
 
@@ -22,6 +24,12 @@ function getAllSourceFiles(parentDir = "src/") {
 	});
 
 	return files.filter(file => /\.purs$/.test(file));
+}
+
+async function sleep(time) {
+	return new Promise((resolve, reject) => {
+		setTimeout(() => resolve(), time);
+	});
 }
 
 async function main() {
@@ -64,11 +72,45 @@ async function main() {
 	for (file of results.keys()) {
 		log(`[${results.get(file).result.length} warnings] ${file}`);
 	}
+
+	log('Starting to correct the warnings on the sources.');
+
+	for (let [file, result] of results.entries()) {
+		let editor = new CodeEditor(file);
+
+		result.result.sort((w1, w2) => {
+			if (w1.position == null || w2.position == null)
+				return 0;
+			return w1.position.startLine - w2.position.startLine;
+		});
+
+		for (let i = 0; i < result.result.length; i++) {
+			let warning = result.result[i];
+			log(`Fixing warnings in ${file}`, ((i / result.result.length) * 100) | 0);
+
+			if (warning.suggestion) {
+				editor.replace(warning.suggestion.replaceRange, warning.suggestion.replacement);
+			} else {
+				switch (warning.errorCode) {
+					case "DuplicateSelectiveImport":
+						editor.replace(warning.position, "");
+						break;
+					default:
+						log("Unknown warning. Please contact developers on how to fix.");
+						log(JSON.stringify(warning, null, 4));
+				}
+			}
+		}
+
+		fs.writeFileSync(file, editor.getCode(), 'utf8');
+		log(`Fixing warnings in ${file}`, 100);
+	}
 }
 
 (async function() {
 	try {
 		startIDE();
+		await sleep(1000);
 		await main();
 		stopIDE();
 	} catch (e) {
