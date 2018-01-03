@@ -48,6 +48,12 @@ async function main() {
 
 		let result = await execIDE(cmd);
 
+		if (result.resultType !== "success") {
+			log(`Found ${result.result.length} errors in ${file}`);
+			log("Cannot continue further when there are errors.");
+			return;
+		}
+
 		if (result.result.length !== 0)
 			results.set(file, result);
 	}
