@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const fs = require('fs');
-const net = require('net');
 const { log } = require('./progressLogger');
 const { execIDE, startIDE, stopIDE } = require('./pursIde');
 
@@ -77,29 +76,39 @@ async function main() {
 
 	for (let [file, result] of results.entries()) {
 		let editor = new CodeEditor(file);
-
-		result.result.sort((w1, w2) => {
-			if (w1.position == null || w2.position == null)
-				return 0;
-			return w1.position.startLine - w2.position.startLine;
-		});
+		let replacements = [];
 
 		for (let i = 0; i < result.result.length; i++) {
 			let warning = result.result[i];
 			log(`Fixing warnings in ${file}`, ((i / result.result.length) * 100) | 0);
 
 			if (warning.suggestion) {
-				editor.replace(warning.suggestion.replaceRange, warning.suggestion.replacement);
+				replacements.push( {
+					range: warning.suggestion.replaceRange,
+					string: warning.suggestion.replacement,
+					cause: warning
+				});
 			} else {
 				switch (warning.errorCode) {
 					case "DuplicateSelectiveImport":
-						editor.replace(warning.position, "");
+						replacements.push({
+							range: warning.position,
+							string: "",
+							cause: warning
+						});
 						break;
+
 					default:
 						log("Unknown warning. Please contact developers on how to fix.");
 						log(JSON.stringify(warning, null, 4));
 				}
 			}
+		}
+
+		replacements.sort((r1, r2) => r1.range.startLine - r2.range.startLine);
+
+		for (let i = 0; i < replacements.length; i++) {
+			editor.replace(replacements[i].range, replacements[i].string);
 		}
 
 		fs.writeFileSync(file, editor.getCode(), 'utf8');
