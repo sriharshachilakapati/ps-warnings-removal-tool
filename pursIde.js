@@ -4,7 +4,11 @@ const { spawn } = require('child_process');
 let ideConn = null;
 
 exports.startIDE = function () {
-	ideConn = spawn("purs", ["ide", "server", "-p", "9999"]);
+	ideConn = spawn("purs", [
+		"ide", "server", "-p", "9999",
+		"src/**/*.purs",
+		"bower_components/**/*.purs"
+	]);
 }
 
 exports.stopIDE = function () {
