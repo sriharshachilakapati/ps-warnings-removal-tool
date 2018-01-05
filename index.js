@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const { log } = require('./progressLogger');
-const { execIDE, startIDE, stopIDE } = require('./pursIde');
-
 const { CodeEditor } = require('./codeEditor');
+const { execIDE, startIDE, stopIDE } = require('./pursIde');
 
 if (process.argv.length > 2)
 	process.chdir(process.argv[2]);
@@ -77,6 +76,7 @@ async function main() {
 	for (let [file, result] of results.entries()) {
 		let editor = new CodeEditor(file);
 		let replacements = [];
+		let unusedTypeVars = new Map();
 
 		for (let i = 0; i < result.result.length; i++) {
 			let warning = result.result[i];
@@ -98,11 +98,53 @@ async function main() {
 						});
 						break;
 
+					case "UnusedTypeVar":
+						let functionName = /in type declaration for (.+)\n/.exec(warning.message)[1];
+
+						if (!unusedTypeVars.has(functionName)) {
+							unusedTypeVars.set(functionName, []);
+						}
+
+						let varName = /variable (.+) is ambiguous/.exec(warning.message)[1];
+						unusedTypeVars.get(functionName).push(varName);
+
+						break;
+
 					default:
 						log("Unknown warning. Please contact developers on how to fix.");
 						log(JSON.stringify(warning, null, 4));
 				}
 			}
+		}
+
+		for (let [functionName, unusedVars] of unusedTypeVars.entries()) {
+			let range = editor.findTypeSignature(functionName);
+
+			if (!range) {
+				log(`Cannot find type signature for function ${functionName}. Missing something??`);
+				continue;
+			}
+
+			let type = editor.select(range);
+			let allVars = /::(.+\.)/.exec(type)[1];
+			let restType = /\.(.*)/.exec(type)[1].trim();
+
+			for (let unusedVar of unusedVars) {
+				allVars = allVars.replace(` ${unusedVar}`, " ");
+			}
+
+			let newType = "";
+
+			if (/forall.*\./.test(allVars)) {
+				newType = `${functionName} :: ${restType}`;
+			} else {
+				newType = `${functionName} :: ${allVars} ${restType}`;
+			}
+
+			replacements.push({
+				range: range,
+				string: newType
+			});
 		}
 
 		replacements.sort((r1, r2) => r1.range.startLine - r2.range.startLine);
