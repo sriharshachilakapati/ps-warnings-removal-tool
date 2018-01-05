@@ -6,6 +6,59 @@ class CodeEditor {
 		this.lineOffset = 0;
 	}
 
+	select(range) {
+		let selection = "";
+
+		if (range.startLine === range.endLine) {
+			selection = this.data[range.startLine - 1].substring(range.startColumn - 1, range.endColumn - 1);
+		} else {
+			selection = this.data[range.startLine - 1].substring(range.startColumn - 1);
+
+			for (let i = range.startLine + 1; i < range.endLine; i++) {
+				selection = `${selection}\n${this.data[i - 1]}`;
+			}
+
+			selection = `${selection}\n${this.data[range.endLine - 1].substring(0, range.endColumn - 1)}`;
+		}
+
+		return selection;
+	}
+
+	findTypeSignature(functionName) {
+		const funEscaped = functionName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+		const typeRe = new RegExp(`${funEscaped}\\s*::`);
+		const implRe = new RegExp(`${funEscaped}.*=`);
+
+		for (let i = 0; i < this.data.length; i++) {
+			let match = typeRe.exec(this.data[i]);
+
+			if (match) {
+				let startLine = i + 1;
+				let startColumn = match.index + 1;
+
+				for (let j = i; j < this.data.length; j++) {
+					match = implRe.exec(this.data[j]);
+
+					if (match) {
+						let endLine = j;
+						let endColumn = this.data[j - 1].length + 1;
+
+						return {
+							startLine: startLine,
+							startColumn: startColumn,
+							endLine: endLine,
+							endColumn: endColumn
+						};
+					}
+				}
+
+				return null;
+			}
+		}
+
+		return null;
+	}
+
 	replace(range, string) {
 		string = string.replace(/\n$/, '');
 
