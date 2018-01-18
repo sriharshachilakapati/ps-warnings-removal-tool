@@ -90,13 +90,13 @@ async function main() {
 				});
 			} else {
 				switch (warning.errorCode) {
-					case "DuplicateSelectiveImport":
-						replacements.push({
-							range: warning.position,
-							string: "",
-							cause: warning
-						});
-						break;
+					// case "DuplicateSelectiveImport":
+					// 	replacements.push({
+					// 		range: warning.position,
+					// 		string: "",
+					// 		cause: warning
+					// 	});
+					// 	break;
 
 					case "UnusedTypeVar":
 						let functionName = /in type declaration for (.+)\n/.exec(warning.message)[1];
