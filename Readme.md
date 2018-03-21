@@ -1,5 +1,7 @@
 # PureScript warnings removal tool
 
+[PS ::: Node version must be greater then 7, because it uses async which is not available on lower versions]
+
 A small tool to automatically iterate over the PureScript code bases and remove most of the common warnings that arise in development.
 
 This is a small tool for convenience. Based upon the PureScript IDE Server, this automatically corrects most of the warnings that usually occur in the project.
