@@ -97,18 +97,17 @@ async function main() {
 					// 		cause: warning
 					// 	});
 					// 	break;
+					// case "UnusedTy:cpeVar":
+					// 	let functionName = /in type declaration for (.+)\n/.exec(warning.message)[1] ?  /in type declaration for (.+)\n/.exec(warning.message)[1] : "";
 
-					case "UnusedTypeVar":
-						let functionName = /in type declaration for (.+)\n/.exec(warning.message)[1];
+					// 	if (!unusedTypeVars.has(functionName)) {
+					// 		unusedTypeVars.set(functionName, []);
+					// 	}
 
-						if (!unusedTypeVars.has(functionName)) {
-							unusedTypeVars.set(functionName, []);
-						}
+					// 	let varName = /variable (.+) is ambiguous/.exec(warning.message)[1];
+					// 	unusedTypeVars.get(functionName).push(varName);
 
-						let varName = /variable (.+) is ambiguous/.exec(warning.message)[1];
-						unusedTypeVars.get(functionName).push(varName);
-
-						break;
+					// 	break;
 
 					default:
 						log("Unknown warning. Please contact developers on how to fix.");
